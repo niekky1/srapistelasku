@@ -11,7 +11,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "jspdf": "^3.0.1",
-"jspdf-autotable": "^5.2.2"
+"jspdf-autotable": "^5.0.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
