@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import jsPDF from "jspdf";
-import autotable from "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import { autoTable } from "jspdf-autotable";
 
 export default function SraPistesivu() {
     const [rasterPages, setRasterPages] = useState([
@@ -200,7 +200,7 @@ export default function SraPistesivu() {
                 >
                     Poista rasti
                 </button>
-                <button
+                <button type="button">
                     onClick={viePdf}
                     className="bg-purple-600 text-white px-3 py-1 rounded"
                 >
