@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import jsPDF from "jspdf";
+import autotable from "jspdf-autotable";
 
 export default function SraPistesivu() {
     const [rasterPages, setRasterPages] = useState([
@@ -36,6 +38,80 @@ export default function SraPistesivu() {
             page.participants = page.participants.filter((p) => p.id !== id);
         });
         setRasterPages(np);
+    };
+    const viePdf = () => {
+        const doc = new jsPDF();
+
+        rasterPages.forEach((rasti, index) => {
+            if (index > 0) doc.addPage();
+            doc.setFontSize(16);
+            doc.text(rasti.name, 14, 20);
+
+            const data = rasti.participants.map(p => {
+                const score = calculateScore(p.hits);
+                const time = parseFloat(p.time) || 0;
+                const hf = time > 0 ? (score / time).toFixed(2) : "0.00";
+                return [p.name, score, time.toFixed(2), hf];
+            });
+
+            autoTable(doc, {
+                startY: 30,
+                head: [["Nimi", "Pisteet", "Aika", "HF"]],
+                body: data,
+            });
+        });
+
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text("Yhteenveto", 14, 20);
+
+        const userData = {};
+        const rastinVoittajaHF = {};
+
+        rasterPages.forEach((r) => {
+            let bestHF = 0;
+            r.participants.forEach((p) => {
+                const score = calculateScore(p.hits);
+                const time = parseFloat(p.time) || 0;
+                const hf = time > 0 ? score / time : 0;
+                if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0, totalHF: 0 };
+                userData[p.name].totalTime += time;
+                userData[p.name].totalHF += hf;
+                if (hf > bestHF) bestHF = hf;
+            });
+            rastinVoittajaHF[r.id] = bestHF;
+        });
+
+        rasterPages.forEach((r) => {
+            const maxPisteet = (r.targets + r.steels) * 10;
+            r.participants.forEach((p) => {
+                const score = calculateScore(p.hits);
+                const time = parseFloat(p.time) || 0;
+                const hf = time > 0 ? score / time : 0;
+                const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
+                const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
+                userData[p.name].total += pisteet;
+            });
+        });
+
+        const totalMaxPoints = rasterPages.reduce((sum, r) => sum + ((r.targets + r.steels) * 10), 0);
+
+        const summaryData = Object.entries(userData)
+            .map(([name, data]) => [
+                name,
+                data.total.toFixed(2),
+                data.totalTime.toFixed(2),
+                (data.totalHF / rasterPages.length).toFixed(2),
+                `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`
+            ]);
+
+        autoTable(doc, {
+            startY: 30,
+            head: [["Nimi", "Yht. pisteet", "Aika", "Keskim. HF", "%"]],
+            body: summaryData,
+        });
+
+        doc.save("sra_tulokset.pdf");
     };
 
     const removeCurrentRasti = () => {
@@ -123,6 +199,12 @@ export default function SraPistesivu() {
                     className="bg-red-500 text-white px-3 py-1 rounded"
                 >
                     Poista rasti
+                </button>
+                <button
+                    onClick={viePdf}
+                    className="bg-purple-600 text-white px-3 py-1 rounded"
+                >
+                    Vie PDF
                 </button>
             </div>
 
