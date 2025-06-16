@@ -47,7 +47,7 @@ const viePdf = () => {
     const maxPisteet = (rasti.targets + rasti.steels) * 10;
     doc.setFontSize(16);
     doc.text(
-      `${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Peltit: ${rasti.steels})`,
+      `${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Pellit: ${rasti.steels})`,
       14,
       20
     );
