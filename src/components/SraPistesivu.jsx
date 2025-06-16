@@ -46,11 +46,7 @@ const viePdf = () => {
     if (index > 0) doc.addPage();
     const maxPisteet = (rasti.targets + rasti.steels) * 10;
     doc.setFontSize(16);
-    doc.text(
-      `${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Pellit: ${rasti.steels})`,
-      14,
-      20
-    );
+    doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Peltit: ${rasti.steels})`, 14, 20);
 
     const data = rasti.participants
       .map((p) => {
@@ -106,18 +102,27 @@ const viePdf = () => {
     0
   );
 
-  const summaryData = Object.entries(userData)
-    .map(([name, data]) => {
-      const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
-      return [
-        name,
-        data.total.toFixed(2),
-        data.totalTime.toFixed(2),
-        kokHF.toFixed(2),
-        `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`,
-      ];
-    })
-    .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]));
+  const summaryArray = Object.entries(userData).map(([name, data]) => {
+    const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
+    return {
+      name,
+      total: data.total,
+      totalTime: data.totalTime,
+      kokHF,
+    };
+  });
+
+  const bestKokHF = Math.max(...summaryArray.map((d) => d.kokHF));
+
+  const summaryData = summaryArray
+    .sort((a, b) => b.kokHF - a.kokHF)
+    .map((d) => [
+      d.name,
+      d.total.toFixed(2),
+      d.totalTime.toFixed(2),
+      d.kokHF.toFixed(2),
+      `${((d.kokHF / bestKokHF) * 100).toFixed(2)}%`,
+    ]);
 
   autoTable(doc, {
     startY: 30,
