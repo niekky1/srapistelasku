@@ -105,18 +105,23 @@ autoTable(doc, {
 
         const totalMaxPoints = rasterPages.reduce((sum, r) => sum + ((r.targets + r.steels) * 10), 0);
 
-        const summaryData = Object.entries(userData)
-            .map(([name, data]) => [
-                name,
-                data.total.toFixed(2),
-                data.totalTime.toFixed(2),
-                (data.totalHF / rasterPages.length).toFixed(2),
-                `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`
-            ]);
+       const summaryData = Object.entries(userData)
+      .map(([name, data]) => {
+        const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
+        return [
+          name,
+          data.total.toFixed(2),
+          data.totalTime.toFixed(2),
+          kokHF.toFixed(2),
+          `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`,
+        ];
+      })
+      .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]));
+
 
         autoTable(doc, {
             startY: 30,
-            head: [["Nimi", "Yht. pisteet", "Aika", "Keskim. HF", "%"]],
+            head: [["Nimi", "Yht. pisteet", "Kok.aika", "Keskim. HF", "%"]],
             body: summaryData,
         });
 
