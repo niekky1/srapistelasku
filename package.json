@@ -6,8 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-   "postinstall": "npm install jspdf --save",
-    "postinstall": "npm install jspdf jspdf-autotable"
+   "postinstall": "npm install jspdf --save"
+ 
   },
   "dependencies": {
     "react": "^18.2.0",
