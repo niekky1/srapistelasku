@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 export default function SraPistesivu() {
     const [rasterPages, setRasterPages] = useState([
@@ -23,13 +21,13 @@ export default function SraPistesivu() {
         Math.max(
             0,
             hits.A * 5 +
-                hits.B * 5 +
-                hits.C * 3 +
-                hits.D * 1 +
-                hits["+10"] * 10 +
-                hits["-10"] * -10 +
-                hits.OHI * -10 +
-                hits.NS * -10
+            hits.B * 5 +
+            hits.C * 3 +
+            hits.D * 1 +
+            hits["+10"] * 10 +
+            hits["-10"] * -10 +
+            hits.OHI * -10 +
+            hits.NS * -10
         );
 
     const removeParticipant = (id) => {
@@ -41,119 +39,31 @@ export default function SraPistesivu() {
     };
 
     const removeCurrentRasti = () => {
-    const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
-    if (updated.length === 0) {
-        setRasterPages([
-            {
-                id: 1,
-                name: "Rasti 1",
-                targets: 0,
-                steels: 0,
-                participants: [],
-            },
-        ]);
-        setCurrentPageIndex(0);
-        setMessage("Tallennettu data ladattu onnistuneesti.");
-        setTimeout(() => setMessage(""), 3000);
-        setShowBanner(true);
-        setTimeout(() => setShowBanner(false), 3000);
-    } else {
-        setRasterPages(updated);
-        setCurrentPageIndex(0);
-    }
-};
-
-    const totalMaxPoints = rasterPages.reduce((sum, r) => sum + ((r.targets + r.steels) * 10), 0);
-
-    const viePdf = () => {
-        const doc = new jsPDF();
-
-        rasterPages.forEach((rasti, index) => {
-            if (index > 0) doc.addPage();
-            doc.setFontSize(16);
-            doc.text(rasti.name, 14, 20);
-
-            const data = rasti.participants.map(p => {
-                const score = calculateScore(p.hits);
-                const time = parseFloat(p.time) || 0;
-                const hf = time > 0 ? (score / time).toFixed(2) : "0.00";
-                return [p.name, score, time.toFixed(2), hf];
-            });
-
-            autoTable(doc, {
-                startY: 30,
-                head: [["Nimi", "Pisteet", "Aika", "HF"]],
-                body: data,
-            });
-        });
-
-        doc.addPage();
-        doc.setFontSize(16);
-        doc.text("Yhteenveto", 14, 20);
-
-        const userData = {};
-        const rastinVoittajaHF = {};
-
-        rasterPages.forEach((r) => {
-            let bestHF = 0;
-            r.participants.forEach((p) => {
-                const score = calculateScore(p.hits);
-                const time = parseFloat(p.time) || 0;
-                const hf = time > 0 ? score / time : 0;
-                if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0, totalHF: 0 };
-                userData[p.name].totalTime += time;
-                userData[p.name].totalHF += hf;
-                if (hf > bestHF) bestHF = hf;
-            });
-            rastinVoittajaHF[r.id] = bestHF;
-        });
-
-        rasterPages.forEach((r) => {
-            const maxPisteet = (r.targets + r.steels) * 10;
-            r.participants.forEach((p) => {
-                const score = calculateScore(p.hits);
-                const time = parseFloat(p.time) || 0;
-                const hf = time > 0 ? score / time : 0;
-                const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
-                const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
-                userData[p.name].total += pisteet;
-            });
-        });
-
-        const sorted = Object.entries(userData)
-            .map(([name, data]) => ({
-                name,
-                ...data,
-                avgHF: data.totalTime > 0 ? data.totalHF / rasterPages.length : 0,
-            }))
-            .sort((a, b) => b.total - a.total);
-
-        const summaryData = sorted.map((u, i) => [
-            u.name,
-            u.total.toFixed(2),
-            u.totalTime.toFixed(2),
-            u.avgHF.toFixed(2),
-            `${((u.total / totalMaxPoints) * 100).toFixed(2)}%`,
-        ]);
-
-        autoTable(doc, {
-            startY: 30,
-            head: [["Nimi", "Yht. pisteet", "Aika", "Keskim. HF", "%"]],
-            body: summaryData,
-        });
-
-        doc.save("sra_tulokset.pdf");
+        const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
+        if (updated.length === 0) {
+            setRasterPages([
+                {
+                    id: 1,
+                    name: "Rasti 1",
+                    targets: 0,
+                    steels: 0,
+                    participants: [],
+                },
+            ]);
+            setCurrentPageIndex(0);
+            setMessage("Tallennettu data ladattu onnistuneesti.");
+            setTimeout(() => setMessage(""), 3000);
+            setShowBanner(true);
+            setTimeout(() => setShowBanner(false), 3000);
+        } else {
+            setRasterPages(updated);
+            setCurrentPageIndex(0);
+        }
     };
 
     return (
         <div className="p-6 space-y-6">
             <div className="flex gap-2 mb-4">
-                <button
-                    onClick={viePdf}
-                    className="bg-purple-600 text-white px-3 py-1 rounded"
-                >
-                    Vie PDF
-                </button>
                 <button
                     onClick={() => {
                         localStorage.setItem("sra_raster_data", JSON.stringify(rasterPages));
@@ -429,7 +339,7 @@ export default function SraPistesivu() {
                     })}
                 </tbody>
             </table>
-                    {(() => {
+            {(() => {
                 const userData = {};
                 const rastinVoittajaHF = {};
 
@@ -472,52 +382,47 @@ export default function SraPistesivu() {
                 const maxTotal = sorted[0]?.total || 1;
 
                 return (
-  <>
-    <section className="bg-white shadow p-4 rounded mt-6">
-      <h2 className="text-xl font-semibold mb-2">Yhteenveto</h2>
-      <table className="w-full text-sm border">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 border">Nimi</th>
-            {rasterPages.map((r, i) => (
-              <React.Fragment key={i}>
-                <th className="p-2 border">{r.name} pisteet</th>
-                <th className="p-2 border">{r.name} HF</th>
-              </React.Fragment>
-            ))}
-            <th className="p-2 border">Yhteispisteet</th>
-            <th className="p-2 border">Aika</th>
-            <th className="p-2 border">Kok. HF</th>
-            <th className="p-2 border">Sija</th>
-            <th className="p-2 border">%</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((u, idx) => (
-            <tr key={u.name} className="border">
-              <td className="p-2 border font-semibold">{u.name}</td>
-              {u.rastipisteet.map((p, i) => (
-                <React.Fragment key={i}>
-                  <td className="p-2 border">{p.toFixed(2)}</td>
-                  <td className="p-2 border">{u.rasthf[i]?.toFixed(2)}</td>
-                </React.Fragment>
-              ))}
-              <td className="p-2 border font-bold">{u.total.toFixed(2)}</td>
-              <td className="p-2 border">{u.totalTime.toFixed(2)}</td>
-              <td className="p-2 border">{u.avgHF.toFixed(2)}</td>
-              <td className="p-2 border">{idx + 1}</td>
-              <td className="p-2 border">{((u.total / maxTotal) * 100).toFixed(2)}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-    <div className="mt-4 text-sm font-medium text-gray-700">
-      Kisan maksimipisteet: {totalMaxPoints}
-    </div>
-  </>
-);
+                    <section className="bg-white shadow p-4 rounded mt-6">
+                        <h2 className="text-xl font-semibold mb-2">Yhteenveto</h2>
+                        <table className="w-full text-sm border">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="p-2 border">Nimi</th>
+                                    {rasterPages.map((r, i) => (
+                                        <React.Fragment key={i}>
+                                            <th className="p-2 border">{r.name} pisteet</th>
+                                            <th className="p-2 border">{r.name} HF</th>
+                                        </React.Fragment>
+                                    ))}
+                                    <th className="p-2 border">Yhteispisteet</th>
+                                    <th className="p-2 border">Aika</th>
+                                    <th className="p-2 border">Kok. HF</th>
+                                    <th className="p-2 border">Sija</th>
+                                    <th className="p-2 border">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sorted.map((u, idx) => (
+                                    <tr key={u.name} className="border">
+                                        <td className="p-2 border font-semibold">{u.name}</td>
+                                        {u.rastipisteet.map((p, i) => (
+                                            <React.Fragment key={i}>
+                                                <td className="p-2 border">{p.toFixed(2)}</td>
+                                                <td className="p-2 border">{u.rasthf[i]?.toFixed(2)}</td>
+                                            </React.Fragment>
+                                        ))}
+                                        <td className="p-2 border font-bold">{u.total.toFixed(2)}</td>
+                                        <td className="p-2 border">{u.totalTime.toFixed(2)}</td>
+                                        <td className="p-2 border">{u.avgHF.toFixed(2)}</td>
+                                        <td className="p-2 border">{idx + 1}</td>
+                                        <td className="p-2 border">{((u.total / maxTotal) * 100).toFixed(2)}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </section>
+                );
             })()}
-            </div>
-  );
+        </div>
+    );
 }
