@@ -39,94 +39,95 @@ export default function SraPistesivu() {
         });
         setRasterPages(np);
     };
-    const viePdf = () => {
-        const doc = new jsPDF();
+const viePdf = () => {
+  const doc = new jsPDF();
 
-        rasterPages.forEach((rasti, index) => {
-            if (index > 0) doc.addPage();
-            doc.setFontSize(16);
-  const maxPisteet = (rasti.targets + rasti.steels) * 10;
-doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet}`, 14, 20);
+  rasterPages.forEach((rasti, index) => {
+    if (index > 0) doc.addPage();
+    const maxPisteet = (rasti.targets + rasti.steels) * 10;
+    doc.setFontSize(16);
+    doc.text(
+      `${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Peltit: ${rasti.steels})`,
+      14,
+      20
+    );
 
-const data = rasti.participants
-  .map(p => {
-    const score = calculateScore(p.hits);
-    const time = parseFloat(p.time) || 0;
-    const hf = time > 0 ? score / time : 0;
-    return { name: p.name, score, time, hf };
-  })
-  .sort((a, b) => b.hf - a.hf)
-  .map(p => [
-    p.name,
-    p.score,
-    p.time.toFixed(2),
-    p.hf.toFixed(2)
-  ]);
+    const data = rasti.participants
+      .map((p) => {
+        const score = calculateScore(p.hits);
+        const time = parseFloat(p.time) || 0;
+        const hf = time > 0 ? score / time : 0;
+        return { name: p.name, score, time, hf };
+      })
+      .sort((a, b) => b.hf - a.hf)
+      .map((p) => [p.name, p.score, p.time.toFixed(2), p.hf.toFixed(2)]);
 
-autoTable(doc, {
-  startY: 30,
-  head: [["Nimi", "Pisteet", "Aika", "HF"]],
-  body: data,
-});
+    autoTable(doc, {
+      startY: 30,
+      head: [["Nimi", "Pisteet", "Aika", "HF"]],
+      body: data,
+    });
   });
 
-        doc.addPage();
-        doc.setFontSize(16);
-        doc.text("Yhteenveto", 14, 20);
+  doc.addPage();
+  doc.setFontSize(16);
+  doc.text("Yhteenveto", 14, 20);
 
-        const userData = {};
-        const rastinVoittajaHF = {};
+  const userData = {};
+  const rastinVoittajaHF = {};
 
-        rasterPages.forEach((r) => {
-            let bestHF = 0;
-            r.participants.forEach((p) => {
-                const score = calculateScore(p.hits);
-                const time = parseFloat(p.time) || 0;
-                const hf = time > 0 ? score / time : 0;
-                if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0, totalHF: 0 };
-                userData[p.name].totalTime += time;
-                userData[p.name].totalHF += hf;
-                if (hf > bestHF) bestHF = hf;
-            });
-            rastinVoittajaHF[r.id] = bestHF;
-        });
+  rasterPages.forEach((r) => {
+    let bestHF = 0;
+    r.participants.forEach((p) => {
+      const score = calculateScore(p.hits);
+      const time = parseFloat(p.time) || 0;
+      const hf = time > 0 ? score / time : 0;
+      if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0 };
+      userData[p.name].totalTime += time;
+      if (hf > bestHF) bestHF = hf;
+    });
+    rastinVoittajaHF[r.id] = bestHF;
+  });
 
-        rasterPages.forEach((r) => {
-            const maxPisteet = (r.targets + r.steels) * 10;
-            r.participants.forEach((p) => {
-                const score = calculateScore(p.hits);
-                const time = parseFloat(p.time) || 0;
-                const hf = time > 0 ? score / time : 0;
-                const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
-                const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
-                userData[p.name].total += pisteet;
-            });
-        });
+  rasterPages.forEach((r) => {
+    const maxPisteet = (r.targets + r.steels) * 10;
+    r.participants.forEach((p) => {
+      const score = calculateScore(p.hits);
+      const time = parseFloat(p.time) || 0;
+      const hf = time > 0 ? score / time : 0;
+      const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
+      const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
+      userData[p.name].total += pisteet;
+    });
+  });
 
-        const totalMaxPoints = rasterPages.reduce((sum, r) => sum + ((r.targets + r.steels) * 10), 0);
+  const totalMaxPoints = rasterPages.reduce(
+    (sum, r) => sum + (r.targets + r.steels) * 10,
+    0
+  );
 
-       const summaryData = Object.entries(userData)
-      .map(([name, data]) => {
-        const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
-        return [
-          name,
-          data.total.toFixed(2),
-          data.totalTime.toFixed(2),
-          kokHF.toFixed(2),
-          `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`,
-        ];
-      })
-      .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]));
+  const summaryData = Object.entries(userData)
+    .map(([name, data]) => {
+      const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
+      return [
+        name,
+        data.total.toFixed(2),
+        data.totalTime.toFixed(2),
+        kokHF.toFixed(2),
+        `${((data.total / totalMaxPoints) * 100).toFixed(2)}%`,
+      ];
+    })
+    .sort((a, b) => parseFloat(b[1]) - parseFloat(a[1]));
 
+  autoTable(doc, {
+    startY: 30,
+    head: [["Nimi", "Yht. pisteet", "Aika", "Kokonais HF", "%"]],
+    body: summaryData,
+  });
 
-        autoTable(doc, {
-            startY: 30,
-            head: [["Nimi", "Yht. pisteet", "Kok.aika", "Keskim. HF", "%"]],
-            body: summaryData,
-        });
+  doc.save("sra_tulokset.pdf");
+};
 
-        doc.save("sra_tulokset.pdf");
-    };
 
     const removeCurrentRasti = () => {
         const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
