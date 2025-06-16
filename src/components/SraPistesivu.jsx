@@ -45,22 +45,29 @@ export default function SraPistesivu() {
         rasterPages.forEach((rasti, index) => {
             if (index > 0) doc.addPage();
             doc.setFontSize(16);
-          doc.text(`${rasti.name} – Maksimipisteet: ${(rasti.targets + rasti.steels) * 10}`, 14, 20);
+  const maxPisteet = (rasti.targets + rasti.steels) * 10;
+doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet}`, 14, 20);
 
-            const data = rasti.participants
+const data = rasti.participants
   .map(p => {
     const score = calculateScore(p.hits);
     const time = parseFloat(p.time) || 0;
     const hf = time > 0 ? score / time : 0;
     return { name: p.name, score, time, hf };
   })
-  .sort((a, b) => b.hf - a.hf) // Sortataan HF:n mukaan laskevasti
+  .sort((a, b) => b.hf - a.hf)
   .map(p => [
     p.name,
     p.score,
     p.time.toFixed(2),
     p.hf.toFixed(2)
   ]);
+
+autoTable(doc, {
+  startY: 30,
+  head: [["Nimi", "Pisteet", "Aika", "HF"]],
+  body: data,
+});
   });
 
         doc.addPage();
