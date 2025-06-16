@@ -200,7 +200,7 @@ export default function SraPistesivu() {
                 >
                     Poista rasti
                 </button>
-                <button type="button">
+                <button type="button"
                     onClick={viePdf}
                     className="bg-purple-600 text-white px-3 py-1 rounded"
                 >
