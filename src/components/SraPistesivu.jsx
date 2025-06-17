@@ -46,7 +46,7 @@ const viePdf = () => {
     if (index > 0) doc.addPage();
     const maxPisteet = (rasti.targets + rasti.steels) * 10;
     doc.setFontSize(16);
-    doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Pellit: ${rasti.steels})`, 14, 20);
+    doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Peltit: ${rasti.steels})`, 14, 20);
 
     const data = rasti.participants
       .map((p) => {
@@ -97,11 +97,6 @@ const viePdf = () => {
     });
   });
 
-  const totalMaxPoints = rasterPages.reduce(
-    (sum, r) => sum + (r.targets + r.steels) * 10,
-    0
-  );
-
   const summaryArray = Object.entries(userData).map(([name, data]) => {
     const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
     return {
@@ -132,7 +127,6 @@ const viePdf = () => {
 
   doc.save("sra_tulokset.pdf");
 };
-
 
     const removeCurrentRasti = () => {
         const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
