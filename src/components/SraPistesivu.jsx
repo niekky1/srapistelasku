@@ -3,143 +3,141 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function SraPistesivu() {
-  const [rasterPages, setRasterPages] = useState([
-    {
-      id: 1,
-      name: "Rasti 1",
-      targets: 0,
-      steels: 0,
-      participants: [],
-    },
-  ]);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [newName, setNewName] = useState("");
-  const [showBanner, setShowBanner] = useState(false);
-  const [message, setMessage] = useState("");
-  const [activeParticipantId, setActiveParticipantId] = useState(null);
+    const [rasterPages, setRasterPages] = useState([
+        {
+            id: 1,
+            name: "Rasti 1",
+            targets: 0,
+            steels: 0,
+            participants: [],
+        },
+    ]);
+    const [currentPageIndex, setCurrentPageIndex] = useState(0);
+    const [newName, setNewName] = useState("");
+    const [showBanner, setShowBanner] = useState(false);
+    const [message, setMessage] = useState("");
+    const [activeParticipantId, setActiveParticipantId] = useState(null);
 
-  const currentPage = rasterPages[currentPageIndex];
+    const currentPage = rasterPages[currentPageIndex];
 
-  const calculateScore = (hits) =>
-    Math.max(
-      0,
-      hits.A * 5 +
-        hits.B * 5 +
-        hits.C * 3 +
-        hits.D * 1 +
-        hits["+10"] * 10 +
-        hits["-10"] * -10 +
-        hits.OHI * -10 +
-        hits.NS * -10
-    );
- const removeParticipant = (id) => {
+    const calculateScore = (hits) =>
+        Math.max(
+            0,
+            hits.A * 5 +
+            hits.B * 5 +
+            hits.C * 3 +
+            hits.D * 1 +
+            hits["+10"] * 10 +
+            hits["-10"] * -10 +
+            hits.OHI * -10 +
+            hits.NS * -10
+        );
+    const removeParticipant = (id) => {
         const np = [...rasterPages];
         np.forEach((page) => {
             page.participants = page.participants.filter((p) => p.id !== id);
         });
         setRasterPages(np);
     };
-const viePdf = () => {
-  const doc = new jsPDF();
+    const viePdf = () => {
+        const doc = new jsPDF();
 
-  rasterPages.forEach((rasti, index) => {
-    if (index > 0) doc.addPage();
-    const maxPisteet = (rasti.targets + rasti.steels) * 10;
-    doc.setFontSize(16);
-    doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Pellit: ${rasti.steels})`, 14, 20);
+        rasterPages.forEach((rasti, index) => {
+            if (index > 0) doc.addPage();
+            const maxPisteet = (rasti.targets + rasti.steels) * 10;
+            doc.setFontSize(16);
+            doc.text(`${rasti.name} – Maksimipisteet: ${maxPisteet} (Taulut: ${rasti.targets}, Pellit: ${rasti.steels})`, 14, 20);
 
-    const data = rasti.participants
-      .map((p) => {
-        const score = calculateScore(p.hits);
-        const time = parseFloat(p.time) || 0;
-        const hf = time > 0 ? score / time : 0;
-        return { name: p.name, score, time, hf };
-      })
-      .sort((a, b) => b.hf - a.hf)
-      .map((p) => [p.name, p.score, p.time.toFixed(2), p.hf.toFixed(2)]);
+            const data = rasti.participants
+                .map((p) => {
+                    const score = calculateScore(p.hits);
+                    const time = parseFloat(p.time) || 0;
+                    const hf = time > 0 ? score / time : 0;
+                    return { name: p.name, score, time, hf };
+                })
+                .sort((a, b) => b.hf - a.hf)
+                .map((p) => [p.name, p.score, p.time.toFixed(2), p.hf.toFixed(2)]);
 
-    autoTable(doc, {
-      startY: 30,
-      head: [["Nimi", "Pisteet", "Aika", "HF"]],
-      body: data,
-    });
-  });
+            autoTable(doc, {
+                startY: 30,
+                head: [["Nimi", "Pisteet", "Aika", "HF"]],
+                body: data,
+            });
+        });
 
-  doc.addPage();
-  doc.setFontSize(16);
-  doc.text("Yhteenveto", 14, 20);
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text("Yhteenveto", 14, 20);
 
-  const userData = {};
-  const rastinVoittajaHF = {};
+        const userData = {};
+        const rastinVoittajaHF = {};
 
-  rasterPages.forEach((r) => {
-    let bestHF = 0;
-    r.participants.forEach((p) => {
-      const score = calculateScore(p.hits);
-      const time = parseFloat(p.time) || 0;
-      const hf = time > 0 ? score / time : 0;
-      if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0 };
-      userData[p.name].totalTime += time;
-      if (hf > bestHF) bestHF = hf;
-    });
-    rastinVoittajaHF[r.id] = bestHF;
-  });
+        rasterPages.forEach((r) => {
+            let bestHF = 0;
+            r.participants.forEach((p) => {
+                const score = calculateScore(p.hits);
+                const time = parseFloat(p.time) || 0;
+                const hf = time > 0 ? score / time : 0;
+                if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0 };
+                userData[p.name].totalTime += time;
+                if (hf > bestHF) bestHF = hf;
+            });
+            rastinVoittajaHF[r.id] = bestHF;
+        });
 
-  rasterPages.forEach((r) => {
-    const maxPisteet = (r.targets + r.steels) * 10;
-    r.participants.forEach((p) => {
-      const score = calculateScore(p.hits);
-      const time = parseFloat(p.time) || 0;
-      const hf = time > 0 ? score / time : 0;
-      const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
-      const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
-      userData[p.name].total += pisteet;
-    });
-  });
+        rasterPages.forEach((r) => {
+            const maxPisteet = (r.targets + r.steels) * 10;
+            r.participants.forEach((p) => {
+                const score = calculateScore(p.hits);
+                const time = parseFloat(p.time) || 0;
+                const hf = time > 0 ? score / time : 0;
+                const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
+                const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
+                userData[p.name].total += pisteet;
+            });
+        });
 
-  const summaryArray = Object.entries(userData).map(([name, data]) => {
-    const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
-    return {
-      name,
-      total: data.total,
-      totalTime: data.totalTime,
-      kokHF,
+        const summaryArray = Object.entries(userData).map(([name, data]) => {
+            const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
+            return {
+                name,
+                total: data.total,
+                totalTime: data.totalTime,
+                kokHF,
+            };
+        });
+
+        const bestKokHF = Math.max(...summaryArray.map((d) => d.kokHF));
+
+        const summaryData = summaryArray
+            .sort((a, b) => b.kokHF - a.kokHF)
+            .map((d) => [
+                d.name,
+                d.total.toFixed(2),
+                d.totalTime.toFixed(2),
+                d.kokHF.toFixed(2),
+                `${((d.kokHF / bestKokHF) * 100).toFixed(2)}%`,
+            ]);
+
+        autoTable(doc, {
+            startY: 30,
+            head: [["Nimi", "Yht. pisteet", "Aika", "Kokonais HF", "%"]],
+            body: summaryData,
+        });
+
+        doc.save("sra_tulokset.pdf");
     };
-  });
-
-  const bestKokHF = Math.max(...summaryArray.map((d) => d.kokHF));
-
-  const summaryData = summaryArray
-    .sort((a, b) => b.kokHF - a.kokHF)
-    .map((d) => [
-      d.name,
-      d.total.toFixed(2),
-      d.totalTime.toFixed(2),
-      d.kokHF.toFixed(2),
-      `${((d.kokHF / bestKokHF) * 100).toFixed(2)}%`,
-    ]);
-
-  autoTable(doc, {
-    startY: 30,
-    head: [["Nimi", "Yht. pisteet", "Aika", "Kokonais HF", "%"]],
-    body: summaryData,
-  });
-
-  doc.save("sra_tulokset.pdf");
-};
 
     const removeCurrentRasti = () => {
         const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
         if (updated.length === 0) {
-            setRasterPages([
-                {
-                    id: 1,
-                    name: "Rasti 1",
-                    targets: 0,
-                    steels: 0,
-                    participants: [],
-                },
-            ]);
+            setRasterPages([{
+                id: 1,
+                name: "Rasti 1",
+                targets: 0,
+                steels: 0,
+                participants: [],
+            }]);
             setCurrentPageIndex(0);
             setMessage("Tallennettu data ladattu onnistuneesti.");
             setTimeout(() => setMessage(""), 3000);
@@ -214,7 +212,8 @@ const viePdf = () => {
                 >
                     Poista rasti
                 </button>
-                <button type="button"
+                <button
+                    type="button"
                     onClick={viePdf}
                     className="bg-purple-600 text-white px-3 py-1 rounded"
                 >
@@ -282,6 +281,7 @@ const viePdf = () => {
                     Lisää osallistuja
                 </button>
             </div>
+
             {showBanner && (
                 <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded">
                     Kaikki rastit poistettiin – uusi Rasti 1 luotu automaattisesti.
@@ -294,256 +294,97 @@ const viePdf = () => {
                 </div>
             )}
 
+            {/* The table */}
             <table className="w-full border text-sm">
                 <thead className="bg-gray-100">
                     <tr>
-    <table className="w-full border text-sm">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 border">Nimi</th>
-            {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((label) => (
-              <th key={label} className="p-2 border">
-                {label}
-              </th>
-            ))}
-            <th className="p-2 border">Aika</th>
-            <th className="p-2 border">Pisteet</th>
-            <th className="p-2 border">HF</th>
-            <th className="p-2 border">Toiminnot</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentPage.participants.map((p) => {
-            const pid = p.id;
-            const score = calculateScore(p.hits);
-            const hf = parseFloat(p.time) > 0 ? (score / parseFloat(p.time)).toFixed(2) : "0.00";
-            const isActive = pid === activeParticipantId;
-
-            return (
-              <tr key={pid} className={`border ${isActive ? "bg-yellow-100" : ""}`}>
-                <td className="p-2 border font-semibold">{p.name}</td>
-                {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((key) => (
-                  <td key={key} className="p-2 border">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        min="0"
-                        value={p.hits[key] === 0 ? "" : p.hits[key]}
-                        onChange={(e) => {
-                          if (!isActive) return;
-                          const value = parseInt(e.target.value, 10);
-                          const np = [...rasterPages];
-                          np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
-                            pp.id === pid
-                              ? {
-                                  ...pp,
-                                  hits: {
-                                    ...pp.hits,
-                                    [key]: isNaN(value) ? 0 : value,
-                                  },
-                                }
-                              : pp
-                          );
-                          setRasterPages(np);
-                        }}
-                        className="w-14 px-1 py-0.5 border rounded"
-                        disabled={!isActive}
-                      />
-                      {isActive && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const np = [...rasterPages];
-                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
-                                pp.id === pid
-                                  ? {
-                                      ...pp,
-                                      hits: {
-                                        ...pp.hits,
-                                        [key]: (pp.hits[key] || 0) + 1,
-                                      },
-                                    }
-                                  : pp
-                              );
-                              setRasterPages(np);
-                            }}
-                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                          >
-                            +1
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const np = [...rasterPages];
-                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
-                                pp.id === pid
-                                  ? {
-                                      ...pp,
-                                      hits: {
-                                        ...pp.hits,
-                                        [key]: Math.max(0, (pp.hits[key] || 0) - 1),
-                                      },
-                                    }
-                                  : pp
-                              );
-                              setRasterPages(np);
-                            }}
-                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                          >
-                            -1
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const np = [...rasterPages];
-                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
-                                pp.id === pid
-                                  ? {
-                                      ...pp,
-                                      hits: {
-                                        ...pp.hits,
-                                        [key]: 0,
-                                      },
-                                    }
-                                  : pp
-                              );
-                              setRasterPages(np);
-                            }}
-                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                          >
-                            0
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                ))}
-                <td className="p-2 border">
-                  <input
-                    type="number"
-                    min="0"
-                    value={p.time || ""}
-                    onChange={(e) => {
-                      if (!isActive) return;
-                      const input = e.target.value.replace(",", ".");
-                      const value = parseFloat(input);
-                      const np = [...rasterPages];
-                      np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
-                        pp.id === pid ? { ...pp, time: isNaN(value) ? 0 : value } : pp
-                      );
-                      setRasterPages(np);
-                    }}
-                    className="w-20 px-1 py-0.5 border rounded"
-                    disabled={!isActive}
-                  />
-                </td>
-                <td className="p-2 border font-bold">{score}</td>
-                <td className="p-2 border">{hf}</td>
-                <td className="p-2 border">
-                  <button
-                    onClick={() => setActiveParticipantId(pid)}
-                    className="bg-yellow-400 text-black px-2 py-1 rounded mb-1"
-                  >
-                    Valitse
-                  </button>
-                  <br />
-                  <button
-                    onClick={() => removeParticipant(pid)}
-                    className="text-red-600"
-                  >
-                    Poista
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-            {(() => {
-                const userData = {};
-                const rastinVoittajaHF = {};
-
-                rasterPages.forEach((r) => {
-                    let bestHF = 0;
-                    r.participants.forEach((p) => {
+                        <th className="p-2 border">Nimi</th>
+                        {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((label) => (
+                            <th key={label} className="p-2 border">
+                                {label}
+                            </th>
+                        ))}
+                        <th className="p-2 border">Aika</th>
+                        <th className="p-2 border">Pisteet</th>
+                        <th className="p-2 border">HF</th>
+                        <th className="p-2 border">Toiminnot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {currentPage.participants.map((p) => {
+                        const pid = p.id;
                         const score = calculateScore(p.hits);
-                        const time = parseFloat(p.time) || 0;
-                        const hf = time > 0 ? score / time : 0;
-                        if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0, totalHF: 0, rastipisteet: [], rasthf: [] };
-                        userData[p.name].totalTime += time;
-                        userData[p.name].totalHF += hf;
-                        if (hf > bestHF) bestHF = hf;
-                    });
-                    rastinVoittajaHF[r.id] = bestHF;
-                });
+                        const hf = parseFloat(p.time) > 0 ? (score / parseFloat(p.time)).toFixed(2) : "0.00";
+                        const isActive = pid === activeParticipantId;
 
-                rasterPages.forEach((r) => {
-                    const maxPisteet = (r.targets + r.steels) * 10;
-                    r.participants.forEach((p) => {
-                        const score = calculateScore(p.hits);
-                        const time = parseFloat(p.time) || 0;
-                        const hf = time > 0 ? score / time : 0;
-                        const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
-                        const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
-                        userData[p.name].rastipisteet.push(pisteet);
-                        userData[p.name].rasthf.push(hf);
-                        userData[p.name].total += pisteet;
-                    });
-                });
-
-                const sorted = Object.entries(userData)
-                    .map(([name, data]) => ({
-                        name,
-                        ...data,
-                        avgHF: data.totalTime > 0 ? data.totalHF / rasterPages.length : 0,
-                    }))
-                    .sort((a, b) => b.total - a.total);
-
-                const maxTotal = sorted[0]?.total || 1;
-
-                return (
-                    <section className="bg-white shadow p-4 rounded mt-6">
-                        <h2 className="text-xl font-semibold mb-2">Yhteenveto</h2>
-                        <table className="w-full text-sm border">
-                            <thead className="bg-gray-100">
-                                <tr>
-                                    <th className="p-2 border">Nimi</th>
-                                    {rasterPages.map((r, i) => (
-                                        <React.Fragment key={i}>
-                                            <th className="p-2 border">{r.name} pisteet</th>
-                                            <th className="p-2 border">{r.name} HF</th>
-                                        </React.Fragment>
-                                    ))}
-                                    <th className="p-2 border">Yhteispisteet</th>
-                                    <th className="p-2 border">Aika</th>
-                                    <th className="p-2 border">Kok. HF</th>
-                                    <th className="p-2 border">Sija</th>
-                                    <th className="p-2 border">%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {sorted.map((u, idx) => (
-                                    <tr key={u.name} className="border">
-                                        <td className="p-2 border font-semibold">{u.name}</td>
-                                        {u.rastipisteet.map((p, i) => (
-                                            <React.Fragment key={i}>
-                                                <td className="p-2 border">{p.toFixed(2)}</td>
-                                                <td className="p-2 border">{u.rasthf[i]?.toFixed(2)}</td>
-                                            </React.Fragment>
-                                        ))}
-                                        <td className="p-2 border font-bold">{u.total.toFixed(2)}</td>
-                                        <td className="p-2 border">{u.totalTime.toFixed(2)}</td>
-                                        <td className="p-2 border">{u.avgHF.toFixed(2)}</td>
-                                        <td className="p-2 border">{idx + 1}</td>
-                                        <td className="p-2 border">{((u.total / maxTotal) * 100).toFixed(2)}%</td>
-                                    </tr>
+                        return (
+                            <tr key={pid} className={`border ${isActive ? "bg-yellow-100" : ""}`}>
+                                <td className="p-2 border font-semibold">{p.name}</td>
+                                {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((key) => (
+                                    <td key={key} className="p-2 border">
+                                        <div className="flex items-center gap-1">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={p.hits[key] === 0 ? "" : p.hits[key]}
+                                                onChange={(e) => {
+                                                    if (!isActive) return;
+                                                    const value = parseInt(e.target.value, 10);
+                                                    const np = [...rasterPages];
+                                                    np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                                        pp.id === pid
+                                                            ? { ...pp, hits: { ...pp.hits, [key]: isNaN(value) ? 0 : value } }
+                                                            : pp
+                                                    );
+                                                    setRasterPages(np);
+                                                }}
+                                                className="w-14 px-1 py-0.5 border rounded"
+                                                disabled={!isActive}
+                                            />
+                                        </div>
+                                    </td>
                                 ))}
-                            </tbody>
-                        </table>
-                    </section>
-                );
-            })()}
-        </div>
+                                <td className="p-2 border">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={p.time || ""}
+                                        onChange={(e) => {
+                                            if (!isActive) return;
+                                            const input = e.target.value.replace(",", ".");
+                                            const value = parseFloat(input);
+                                            const np = [...rasterPages];
+                                            np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                                pp.id === pid ? { ...pp, time: isNaN(value) ? 0 : value } : pp
+                                            );
+                                            setRasterPages(np);
+                                        }}
+                                        className="w-20 px-1 py-0.5 border rounded"
+                                        disabled={!isActive}
+                                    />
+                                </td>
+                                <td className="p-2 border font-bold">{score}</td>
+                                <td className="p-2 border">{hf}</td>
+                                <td className="p-2 border">
+                                    <button
+                                        onClick={() => setActiveParticipantId(pid)}
+                                        className={`px-2 py-1 rounded mb-1 ${isActive ? "bg-green-500 text-white" : "bg-yellow-400 text-black"}`}
+                                    >
+                                        {isActive ? "Valittu" : "Valitse"}
+                                    </button>
+                                    <br />
+                                    <button
+                                        onClick={() => removeParticipant(pid)}
+                                        className="text-red-600"
+                                    >
+                                        Poista
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>  
     );
 }
