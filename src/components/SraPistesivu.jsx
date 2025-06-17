@@ -1,38 +1,38 @@
 import React, { useState } from "react";
-import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function SraPistesivu() {
-    const [rasterPages, setRasterPages] = useState([
-        {
-            id: 1,
-            name: "Rasti 1",
-            targets: 0,
-            steels: 0,
-            participants: [],
-        },
-    ]);
-    const [currentPageIndex, setCurrentPageIndex] = useState(0);
-    const [newName, setNewName] = useState("");
-    const [showBanner, setShowBanner] = useState(false);
-    const [message, setMessage] = useState("");
+  const [rasterPages, setRasterPages] = useState([
+    {
+      id: 1,
+      name: "Rasti 1",
+      targets: 0,
+      steels: 0,
+      participants: [],
+    },
+  ]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [newName, setNewName] = useState("");
+  const [showBanner, setShowBanner] = useState(false);
+  const [message, setMessage] = useState("");
+  const [activeParticipantId, setActiveParticipantId] = useState(null);
 
-    const currentPage = rasterPages[currentPageIndex];
+  const currentPage = rasterPages[currentPageIndex];
 
-    const calculateScore = (hits) =>
-        Math.max(
-            0,
-            hits.A * 5 +
-            hits.B * 5 +
-            hits.C * 3 +
-            hits.D * 1 +
-            hits["+10"] * 10 +
-            hits["-10"] * -10 +
-            hits.OHI * -10 +
-            hits.NS * -10
-        );
-
-    const removeParticipant = (id) => {
+  const calculateScore = (hits) =>
+    Math.max(
+      0,
+      hits.A * 5 +
+        hits.B * 5 +
+        hits.C * 3 +
+        hits.D * 1 +
+        hits["+10"] * 10 +
+        hits["-10"] * -10 +
+        hits.OHI * -10 +
+        hits.NS * -10
+    );
+ const removeParticipant = (id) => {
         const np = [...rasterPages];
         np.forEach((page) => {
             page.participants = page.participants.filter((p) => p.id !== id);
@@ -297,144 +297,169 @@ const viePdf = () => {
             <table className="w-full border text-sm">
                 <thead className="bg-gray-100">
                     <tr>
-                        <th className="p-2 border">Nimi</th>
-                        {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map(label => (
-                            <th key={label} className="p-2 border">{label}</th>
-                        ))}
-                        <th className="p-2 border">Aika</th>
-                        <th className="p-2 border">Pisteet</th>
-                        <th className="p-2 border">HF</th>
-                        <th className="p-2 border">Poista</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {currentPage.participants.map((p) => {
-                        const pid = p.id;
-                        const score = calculateScore(p.hits);
-                        const hf = parseFloat(p.time) > 0 ? (score / parseFloat(p.time)).toFixed(2) : "0.00";
-                        return (
-                            <tr key={pid} className="border">
-                                <td className="p-2 border font-semibold">{p.name}</td>
-                                {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((key) => (
-                                    <td key={key} className="p-2 border">
-                                        <div className="flex items-center gap-1">
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={p.hits[key] === 0 ? "" : p.hits[key]}
-                                                onChange={(e) => {
-                                                    const value = parseInt(e.target.value, 10);
-                                                    const np = [...rasterPages];
-                                                    np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
-                                                        pp.id === pid
-                                                            ? {
-                                                                ...pp,
-                                                                hits: {
-                                                                    ...pp.hits,
-                                                                    [key]: isNaN(value) ? 0 : value
-                                                                }
-                                                            }
-                                                            : pp
-                                                    );
-                                                    setRasterPages(np);
-                                                }}
-                                                className="w-14 px-1 py-0.5 border rounded"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const np = [...rasterPages];
-                                                    np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
-                                                        pp.id === pid
-                                                            ? {
-                                                                ...pp,
-                                                                hits: {
-                                                                    ...pp.hits,
-                                                                    [key]: (pp.hits[key] || 0) + 1
-                                                                }
-                                                            }
-                                                            : pp
-                                                    );
-                                                    setRasterPages(np);
-                                                }}
-                                                className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                                            >
-                                                +1
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const np = [...rasterPages];
-                                                    np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
-                                                        pp.id === pid
-                                                            ? {
-                                                                ...pp,
-                                                                hits: {
-                                                                    ...pp.hits,
-                                                                    [key]: Math.max(0, (pp.hits[key] || 0) - 1)
-                                                                }
-                                                            }
-                                                            : pp
-                                                    );
-                                                    setRasterPages(np);
-                                                }}
-                                                className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                                            >
-                                                -1
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const np = [...rasterPages];
-                                                    np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
-                                                        pp.id === pid
-                                                            ? {
-                                                                ...pp,
-                                                                hits: {
-                                                                    ...pp.hits,
-                                                                    [key]: 0
-                                                                }
-                                                            }
-                                                            : pp
-                                                    );
-                                                    setRasterPages(np);
-                                                }}
-                                                className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
-                                            >
-                                                0
-                                            </button>
-                                        </div>
-                                    </td>
-                                ))}
-                                <td className="p-2 border">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        value={p.time || ""}
-                                        onChange={(e) => {
-                                            const input = e.target.value.replace(",", ".");
-                                            const value = parseFloat(input);
-                                            const np = [...rasterPages];
-                                            np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
-                                                pp.id === pid
-                                                    ? { ...pp, time: isNaN(value) ? 0 : value }
-                                                    : pp
-                                            );
-                                            setRasterPages(np);
-                                        }}
-                                        className="w-20 px-1 py-0.5 border rounded"
-                                    />
-                                </td>
-                                <td className="p-2 border font-bold">{score}</td>
-                                <td className="p-2 border">{hf}</td>
-                                <td className="p-2 border">
-                                    <button onClick={() => removeParticipant(pid)} className="text-red-600">Poista</button>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
+    <table className="w-full border text-sm">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="p-2 border">Nimi</th>
+            {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((label) => (
+              <th key={label} className="p-2 border">
+                {label}
+              </th>
+            ))}
+            <th className="p-2 border">Aika</th>
+            <th className="p-2 border">Pisteet</th>
+            <th className="p-2 border">HF</th>
+            <th className="p-2 border">Toiminnot</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentPage.participants.map((p) => {
+            const pid = p.id;
+            const score = calculateScore(p.hits);
+            const hf = parseFloat(p.time) > 0 ? (score / parseFloat(p.time)).toFixed(2) : "0.00";
+            const isActive = pid === activeParticipantId;
+
+            return (
+              <tr key={pid} className={`border ${isActive ? "bg-yellow-100" : ""}`}>
+                <td className="p-2 border font-semibold">{p.name}</td>
+                {["A", "B", "C", "D", "+10", "-10", "OHI", "NS"].map((key) => (
+                  <td key={key} className="p-2 border">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={p.hits[key] === 0 ? "" : p.hits[key]}
+                        onChange={(e) => {
+                          if (!isActive) return;
+                          const value = parseInt(e.target.value, 10);
+                          const np = [...rasterPages];
+                          np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
+                            pp.id === pid
+                              ? {
+                                  ...pp,
+                                  hits: {
+                                    ...pp.hits,
+                                    [key]: isNaN(value) ? 0 : value,
+                                  },
+                                }
+                              : pp
+                          );
+                          setRasterPages(np);
+                        }}
+                        className="w-14 px-1 py-0.5 border rounded"
+                        disabled={!isActive}
+                      />
+                      {isActive && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const np = [...rasterPages];
+                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
+                                pp.id === pid
+                                  ? {
+                                      ...pp,
+                                      hits: {
+                                        ...pp.hits,
+                                        [key]: (pp.hits[key] || 0) + 1,
+                                      },
+                                    }
+                                  : pp
+                              );
+                              setRasterPages(np);
+                            }}
+                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
+                          >
+                            +1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const np = [...rasterPages];
+                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
+                                pp.id === pid
+                                  ? {
+                                      ...pp,
+                                      hits: {
+                                        ...pp.hits,
+                                        [key]: Math.max(0, (pp.hits[key] || 0) - 1),
+                                      },
+                                    }
+                                  : pp
+                              );
+                              setRasterPages(np);
+                            }}
+                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
+                          >
+                            -1
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const np = [...rasterPages];
+                              np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
+                                pp.id === pid
+                                  ? {
+                                      ...pp,
+                                      hits: {
+                                        ...pp.hits,
+                                        [key]: 0,
+                                      },
+                                    }
+                                  : pp
+                              );
+                              setRasterPages(np);
+                            }}
+                            className="bg-gray-200 text-sm px-2 rounded hover:bg-gray-300"
+                          >
+                            0
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                ))}
+                <td className="p-2 border">
+                  <input
+                    type="number"
+                    min="0"
+                    value={p.time || ""}
+                    onChange={(e) => {
+                      if (!isActive) return;
+                      const input = e.target.value.replace(",", ".");
+                      const value = parseFloat(input);
+                      const np = [...rasterPages];
+                      np[currentPageIndex].participants = np[currentPageIndex].participants.map((pp) =>
+                        pp.id === pid ? { ...pp, time: isNaN(value) ? 0 : value } : pp
+                      );
+                      setRasterPages(np);
+                    }}
+                    className="w-20 px-1 py-0.5 border rounded"
+                    disabled={!isActive}
+                  />
+                </td>
+                <td className="p-2 border font-bold">{score}</td>
+                <td className="p-2 border">{hf}</td>
+                <td className="p-2 border">
+                  <button
+                    onClick={() => setActiveParticipantId(pid)}
+                    className="bg-yellow-400 text-black px-2 py-1 rounded mb-1"
+                  >
+                    Valitse
+                  </button>
+                  <br />
+                  <button
+                    onClick={() => removeParticipant(pid)}
+                    className="text-red-600"
+                  >
+                    Poista
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
             {(() => {
                 const userData = {};
                 const rastinVoittajaHF = {};
