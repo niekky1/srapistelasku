@@ -235,18 +235,72 @@ export default function SraPistesivu() {
                         }}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium">Peltien määrä</label>
+                <div className="flex flex-col items-center">
                     <input
                         type="number"
-                        className="border px-2 py-1 rounded w-24"
-                        value={currentPage.steels || ""}
+                        min="0"
+                        value={p.hits[key] === 0 ? "" : p.hits[key]}
                         onChange={(e) => {
-                            const newPages = [...rasterPages];
-                            newPages[currentPageIndex].steels = parseInt(e.target.value) || 0;
-                            setRasterPages(newPages);
+                            if (!isActive) return;
+                            const value = parseInt(e.target.value, 10);
+                            const np = [...rasterPages];
+                            np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                pp.id === pid
+                                    ? { ...pp, hits: { ...pp.hits, [key]: isNaN(value) ? 0 : value } }
+                                    : pp
+                            );
+                            setRasterPages(np);
                         }}
+                        className="w-14 px-1 py-0.5 border rounded"
+                        disabled={!isActive}
                     />
+                    <div className="flex gap-1 mt-1">
+                        <button
+                            className="px-1 text-xs bg-green-200 rounded"
+                            disabled={!isActive}
+                            onClick={() => {
+                                const np = [...rasterPages];
+                                np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                    pp.id === pid
+                                        ? { ...pp, hits: { ...pp.hits, [key]: (pp.hits[key] || 0) + 1 } }
+                                        : pp
+                                );
+                                setRasterPages(np);
+                            }}
+                        >
+                            +1
+                        </button>
+                        <button
+                            className="px-1 text-xs bg-red-200 rounded"
+                            disabled={!isActive}
+                            onClick={() => {
+                                const np = [...rasterPages];
+                                np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                    pp.id === pid
+                                        ? { ...pp, hits: { ...pp.hits, [key]: Math.max(0, (pp.hits[key] || 0) - 1) } }
+                                        : pp
+                                );
+                                setRasterPages(np);
+                            }}
+                        >
+                            -1
+                        </button>
+                        <button
+                            className="px-1 text-xs bg-gray-300 rounded"
+                            disabled={!isActive}
+                            onClick={() => {
+                                const np = [...rasterPages];
+                                np[currentPageIndex].participants = np[currentPageIndex].participants.map(pp =>
+                                    pp.id === pid
+                                        ? { ...pp, hits: { ...pp.hits, [key]: 0 } }
+                                        : pp
+                                );
+                                setRasterPages(np);
+                            }}
+                        >
+                            0
+                        </button>
+                    </div>
                 </div>
                 <div className="text-sm font-semibold self-end pb-1">
                     Maksimipisteet: {currentPage.targets * 10 + currentPage.steels * 10}
@@ -385,6 +439,76 @@ export default function SraPistesivu() {
                     })}
                 </tbody>
             </table>
+            {rasterPages.length > 0 && (
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold mb-2">Yhteenveto</h2>
+                    <table className="w-full border text-sm">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="p-2 border">Nimi</th>
+                                <th className="p-2 border">Yht. pisteet</th>
+                                <th className="p-2 border">Kokonaisaika</th>
+                                <th className="p-2 border">Kokonais HF</th>
+                                <th className="p-2 border">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(() => {
+                                const userData = {};
+                                const rastinVoittajaHF = {};
+                                rasterPages.forEach((r) => {
+                                    let bestHF = 0;
+                                    r.participants.forEach((p) => {
+                                        const score = calculateScore(p.hits);
+                                        const time = parseFloat(p.time) || 0;
+                                        const hf = time > 0 ? score / time : 0;
+                                        if (!userData[p.name]) userData[p.name] = { total: 0, totalTime: 0 };
+                                        userData[p.name].totalTime += time;
+                                        if (hf > bestHF) bestHF = hf;
+                                    });
+                                    rastinVoittajaHF[r.id] = bestHF;
+                                });
+
+                                rasterPages.forEach((r) => {
+                                    const maxPisteet = (r.targets + r.steels) * 10;
+                                    r.participants.forEach((p) => {
+                                        const score = calculateScore(p.hits);
+                                        const time = parseFloat(p.time) || 0;
+                                        const hf = time > 0 ? score / time : 0;
+                                        const hfProsentti = rastinVoittajaHF[r.id] > 0 ? hf / rastinVoittajaHF[r.id] : 0;
+                                        const pisteet = parseFloat((hfProsentti * maxPisteet).toFixed(2));
+                                        userData[p.name].total += pisteet;
+                                    });
+                                });
+
+                                const summaryArray = Object.entries(userData).map(([name, data]) => {
+                                    const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
+                                    return {
+                                        name,
+                                        total: data.total,
+                                        totalTime: data.totalTime,
+                                        kokHF,
+                                    };
+                                });
+
+                                const bestKokHF = Math.max(...summaryArray.map((d) => d.kokHF));
+
+                                return summaryArray
+                                    .sort((a, b) => b.kokHF - a.kokHF)
+                                    .map((d) => (
+                                        <tr key={d.name}>
+                                            <td className="p-2 border font-semibold">{d.name}</td>
+                                            <td className="p-2 border">{d.total.toFixed(2)}</td>
+                                            <td className="p-2 border">{d.totalTime.toFixed(2)}</td>
+                                            <td className="p-2 border">{d.kokHF.toFixed(2)}</td>
+                                            <td className="p-2 border">{((d.kokHF / bestKokHF) * 100).toFixed(2)}%</td>
+                                        </tr>
+                                    ));
+                            })()}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>  
     );
 }
