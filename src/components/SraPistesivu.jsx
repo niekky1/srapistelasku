@@ -494,7 +494,7 @@ export default function SraPistesivu() {
                                 const bestKokHF = Math.max(...summaryArray.map((d) => d.kokHF));
 
                                 return summaryArray
-                                    .sort((a, b) => b.kokHF - a.kokHF)
+                                    .sort((a, b) => b.total - a.total)
                                     .map((d) => (
                                         <tr key={d.name}>
                                             <td className="p-2 border font-semibold">{d.name}</td>
