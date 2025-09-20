@@ -7,6 +7,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    minify: false,              // ← väliaikainen: saat selkeät rivit ja funktioiden nimet
     rollupOptions: {
       output: {
         manualChunks: {
