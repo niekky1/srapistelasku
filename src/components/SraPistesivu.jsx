@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-
 export default function SraPistesivu() {
   const [rasterPages, setRasterPages] = useState([
     { id: 1, name: "Rasti 1", targets: 0, steels: 0, participants: [] },
@@ -222,6 +221,7 @@ export default function SraPistesivu() {
             type="number"
             className="border px-2 py-1 rounded w-24"
             value={currentPage.targets || 0}
+            min={0}
             onChange={(e) => {
               const newPages = [...rasterPages];
               newPages[currentPageIndex] = {
@@ -238,6 +238,7 @@ export default function SraPistesivu() {
             type="number"
             className="border px-2 py-1 rounded w-24"
             value={currentPage.steels || 0}
+            min={0}
             onChange={(e) => {
               const newPages = [...rasterPages];
               newPages[currentPageIndex] = {
