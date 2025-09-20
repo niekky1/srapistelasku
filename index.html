@@ -3,19 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SRA Pistelaskuri</title>
+    <title>SRA Pistelasku</title>
     <script>
-  window.addEventListener('error', (e) => {
-    console.error('window.onerror:', e.error || e.message, e);
-  });
-  window.addEventListener('unhandledrejection', (e) => {
-    console.error('unhandledrejection:', e.reason);
-  });
-</script>
-    <link rel="stylesheet" href="/src/index.css" />
+      window.addEventListener('error', (e) => {
+        console.error('window.onerror:', e.error || e.message, e);
+      });
+      window.addEventListener('unhandledrejection', (e) => {
+        console.error('unhandledrejection:', e.reason);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!-- Vite korvaa tämän buildissä assets-chunkilla -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
