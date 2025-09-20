@@ -1,18 +1,11 @@
 import React, { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-@import "tailwindcss";
-import "./index.css";
+import "./index.css"; // Tailwind ja oma CSS tulevat tämän kautta
 
 export default function SraPistesivu() {
   const [rasterPages, setRasterPages] = useState([
-    {
-      id: 1,
-      name: "Rasti 1",
-      targets: 0,
-      steels: 0,
-      participants: [],
-    },
+    { id: 1, name: "Rasti 1", targets: 0, steels: 0, participants: [] },
   ]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [newName, setNewName] = useState("");
@@ -43,11 +36,9 @@ export default function SraPistesivu() {
     setRasterPages(np);
   };
 
-  // Vie PDF: korjattu järjestys yhteenvedossa -> kokonaispisteiden mukaan
   const viePdf = () => {
     const doc = new jsPDF();
 
-    // Sivut per rasti
     rasterPages.forEach((rasti, index) => {
       if (index > 0) doc.addPage();
       const maxPisteet = (rasti.targets + rasti.steels) * 10;
@@ -75,7 +66,7 @@ export default function SraPistesivu() {
       });
     });
 
-    // Yhteenveto-sivu
+    // Yhteenveto
     doc.addPage();
     doc.setFontSize(16);
     doc.text("Yhteenveto", 14, 20);
@@ -83,7 +74,7 @@ export default function SraPistesivu() {
     const userData = {};
     const rastinVoittajaHF = {};
 
-    // 1) kerää per-rasti paras HF ja kokona ajat
+    // 1) paras HF / rasti + kokonaisajat
     rasterPages.forEach((r) => {
       let bestHF = 0;
       r.participants.forEach((p) => {
@@ -97,7 +88,7 @@ export default function SraPistesivu() {
       rastinVoittajaHF[r.id] = bestHF;
     });
 
-    // 2) laske pisteet suhteessa rastin voittajan HF:ään
+    // 2) pisteet suhteessa rastin voittajaan
     rasterPages.forEach((r) => {
       const maxPisteet = (r.targets + r.steels) * 10;
       r.participants.forEach((p) => {
@@ -110,21 +101,13 @@ export default function SraPistesivu() {
       });
     });
 
-    // 3) muodosta yhteenvedon taulukko
+    // 3) taulukko
     const summaryArray = Object.entries(userData).map(([name, data]) => {
       const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
-      return {
-        name,
-        total: data.total,
-        totalTime: data.totalTime,
-        kokHF,
-      };
+      return { name, total: data.total, totalTime: data.totalTime, kokHF };
     });
 
-    // *** JÄRJESTYS KOKONAISPISTEIDEN MUKAAN ***
-    const bestTotal = summaryArray.length
-      ? Math.max(...summaryArray.map((d) => d.total))
-      : 0;
+    const bestTotal = summaryArray.length ? Math.max(...summaryArray.map((d) => d.total)) : 0;
 
     const summaryData = summaryArray
       .sort((a, b) => b.total - a.total)
@@ -149,15 +132,7 @@ export default function SraPistesivu() {
   const removeCurrentRasti = () => {
     const updated = rasterPages.filter((_, i) => i !== currentPageIndex);
     if (updated.length === 0) {
-      setRasterPages([
-        {
-          id: 1,
-          name: "Rasti 1",
-          targets: 0,
-          steels: 0,
-          participants: [],
-        },
-      ]);
+      setRasterPages([{ id: 1, name: "Rasti 1", targets: 0, steels: 0, participants: [] }]);
       setCurrentPageIndex(0);
       setMessage("Kaikki rastit poistettiin. Luotiin uusi Rasti 1.");
       setTimeout(() => setMessage(""), 3000);
@@ -350,7 +325,7 @@ export default function SraPistesivu() {
                     <div className="flex items-center gap-1">
                       <input
                         type="number"
-                        min="0"
+                        min={0}
                         value={p.hits[key] === 0 ? "" : p.hits[key]}
                         onChange={(e) => {
                           if (!isActive) return;
@@ -413,7 +388,7 @@ export default function SraPistesivu() {
                 <td className="p-2 border">
                   <input
                     type="number"
-                    min="0"
+                    min={0}
                     value={p.time || ""}
                     onChange={(e) => {
                       if (!isActive) return;
@@ -495,17 +470,10 @@ export default function SraPistesivu() {
 
                 const summaryArray = Object.entries(userData).map(([name, data]) => {
                   const kokHF = data.totalTime > 0 ? data.total / data.totalTime : 0;
-                  return {
-                    name,
-                    total: data.total,
-                    totalTime: data.totalTime,
-                    kokHF,
-                  };
+                  return { name, total: data.total, totalTime: data.totalTime, kokHF };
                 });
 
-                const bestKokHF = summaryArray.length
-                  ? Math.max(...summaryArray.map((d) => d.kokHF))
-                  : 0;
+                const bestKokHF = summaryArray.length ? Math.max(...summaryArray.map((d) => d.kokHF)) : 0;
 
                 return summaryArray
                   .sort((a, b) => b.kokHF - a.kokHF)
@@ -515,9 +483,9 @@ export default function SraPistesivu() {
                       <td className="p-2 border">{d.total.toFixed(2)}</td>
                       <td className="p-2 border">{d.totalTime.toFixed(2)}</td>
                       <td className="p-2 border">{d.kokHF.toFixed(2)}</td>
-                      <td className="p-2 border">{
-                        bestKokHF > 0 ? ((d.kokHF / bestKokHF) * 100).toFixed(2) : "0.00"
-                      }%</td>
+                      <td className="p-2 border">
+                        {bestKokHF > 0 ? ((d.kokHF / bestKokHF) * 100).toFixed(2) : "0.00"}%
+                      </td>
                     </tr>
                   ));
               })()}
