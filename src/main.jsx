@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import SraPistesivu from './SraPistesivu'
+import SraPistesivu from './components/SraPistesivu'
 import { ErrorBoundary } from './ErrorBoundary'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
