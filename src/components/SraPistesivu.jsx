@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 @import "tailwindcss";
+import "./index.css";
 
 export default function SraPistesivu() {
   const [rasterPages, setRasterPages] = useState([
